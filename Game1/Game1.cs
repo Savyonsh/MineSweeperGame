@@ -1,40 +1,40 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System;
-using System.IO;
-
-
-namespace Game1
+﻿namespace Game1
 {
-    /// <summary>
-    /// This is the main type for your game.
-    /// </summary>
+    using Microsoft.Xna.Framework;
+    using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
+    using System;
+    using System.IO;
+
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        internal GraphicsDeviceManager graphics;
 
-        //Sprites
-        Sprite[,] gameBoard;
+        internal SpriteBatch spriteBatch;
 
-        //Mouse
-        MouseState mouseCurrent;
-        MouseState mousePrevious;
+        internal Sprite[,] gameBoard;
 
-        //Ints
-        int gameNumber = 0;
-        int numberOfBombs;
-        int gameBoardSize;
-        int numberOfBombsDiscovered;
-        bool gameOver;
-        bool winner;
+        internal MouseState mouseCurrent;
 
-        int seconds = 0;
-        int mintues = 0;
+        internal MouseState mousePrevious;
 
-        byte[] randomBombs;
-        
+        internal int gameNumber = 0;
+
+        internal int numberOfBombs;
+
+        internal int gameBoardSize;
+
+        internal int numberOfBombsDiscovered;
+
+        internal int seconds = 0;
+
+        internal int mintues = 0;
+
+        internal int savedTime = 0;
+
+        internal bool gameOver;
+
+        internal bool winner;
 
         public Game1()
         {
@@ -47,7 +47,6 @@ namespace Game1
             graphics.ApplyChanges();
             this.IsMouseVisible = true;
             gameBoard = new Sprite[gameBoardSize, gameBoardSize];
-            randomBombs = new byte[gameBoardSize * gameBoardSize];
         }
 
         protected override void Initialize()
@@ -63,7 +62,6 @@ namespace Game1
                         gameBoard[i, j].clearFeild();
                         gameBoard[i, j].GetSetSpriteTexture2D = null;
                     }
-                    randomBombs[i * gameBoardSize + j] = (byte)(i * gameBoardSize + j);
                 }
             }
             numberOfBombs = 50;
@@ -71,6 +69,7 @@ namespace Game1
             gameOver = false;
             winner = false;
             numberOfBombsDiscovered = numberOfBombs;
+            seconds = 0;
             gameNumber++;
             base.Initialize();
         }
@@ -89,8 +88,6 @@ namespace Game1
 
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
-
         }
 
         protected override void Update(GameTime gameTime)
@@ -99,7 +96,15 @@ namespace Game1
                 Exit();
             mousePrevious = mouseCurrent;
             mouseCurrent = Mouse.GetState();
-            seconds = (int)gameTime.TotalGameTime.TotalSeconds % 60;
+            seconds = (int)gameTime.TotalGameTime.TotalSeconds - savedTime;
+            
+            if(seconds == 60) {
+                savedTime = seconds;
+                mintues++;
+            }
+
+            if(mouseCurrent.X / 25 < 0 || mouseCurrent.X / 25 > gameBoardSize ||
+                mouseCurrent.Y / 25 - 1 < 0 || mouseCurrent.Y / 25 - 1 > gameBoardSize) return;
 
             if (mousePrevious.LeftButton == ButtonState.Pressed && mouseCurrent.LeftButton == ButtonState.Released)
             {
@@ -107,7 +112,7 @@ namespace Game1
 
                 if ((gameOver || winner) && mouseCurrent.X < 300 && mouseCurrent.X > 200 && mouseCurrent.Y > 250 && mouseCurrent.Y < 350)
                 {
-                    reloadGame(gameTime);
+                    reloadGame(gameTime);                  
                     return;
                 }
                 if (gameBoard[mouseCurrent.X / 25, mouseCurrent.Y / 25 - 1].Bombed())
@@ -144,12 +149,14 @@ namespace Game1
 
         public void reloadGame(GameTime gameTime)
         {
+            savedTime = seconds;
+            mintues = 0;
             Initialize();
             LoadContent();
             Draw(gameTime);
             Update(gameTime);
-
         }
+
         protected override void Draw(GameTime gameTime)
         {
             SpriteFont spriteFont = this.Content.Load<SpriteFont>("myFont");
@@ -162,7 +169,24 @@ namespace Game1
                     spriteBatch.Draw(gameBoard[i, j].GetSetSpriteTexture2D, gameBoard[i, j].GetSetSpriteVector2D, gameBoard[i, j].GetSetSpriteRectangle, Color.White);
                     if (gameBoard[i, j].GetSetSpriteTexture2D == this.Content.Load<Texture2D>("buttonPressed") && gameBoard[i, j].getNumberNearMe() != 0)
                     {
-                        spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.Blue);
+                        switch (gameBoard[i,j].getNumberNearMe()) {
+                            case 1:
+                                spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.Blue);
+                                break;
+                            case 2:
+                                spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.DarkGreen);
+                                break;
+                            case 3: 
+                                spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.Red);
+                                break;
+                            case 4:
+                                spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.DarkBlue);
+                                break;
+                            default:
+                                spriteBatch.DrawString(spriteFont, gameBoard[i, j].getNumberNearMe().ToString(), new Vector2(gameBoard[i, j].GetSetSpriteVector2D.X + 7, gameBoard[i, j].GetSetSpriteVector2D.Y + 3), Color.Black);                       
+                                break;
+                        }
+                        
                     }
                 }
             }
@@ -179,22 +203,21 @@ namespace Game1
             }
             base.Draw(gameTime);
             spriteBatch.End();
-
         }
 
         private void locateBombs()
         {
             System.Random random = new System.Random();            
-            int randomNumber1, randomNumber2;
+            int rR, cR;
             for (int i = 0; i < numberOfBombs; i++)
             {
-                randomNumber1 = random.Next(0, 50);
-                randomNumber2 = random.Next(0, 50);
-                gameBoard[randomNumber1, randomNumber2].placeBomb();
+                do {
+                rR = random.Next(0, gameBoardSize);
+                cR = random.Next(0, gameBoardSize);
+                } while (gameBoard[rR,cR].Bombed());
+                gameBoard[rR,cR].placeBomb();
 
             }
-            numberOfBombs = 0;
-
             placeNumbrers();
         }
 
@@ -206,20 +229,20 @@ namespace Game1
                 {
                     if (gameBoard[i, j].Bombed())
                     {
-                        numberOfBombs++;
                         // Determaning the number on the box 
                         if (i > 0) gameBoard[i - 1, j].incNumberNearMe();
                         if (j > 0) gameBoard[i, j - 1].incNumberNearMe();
-                        if (i < gameBoardSize) gameBoard[i + 1, j].incNumberNearMe();
-                        if (j < gameBoardSize) gameBoard[i, j + 1].incNumberNearMe();
-                        if (i > 0 && j < gameBoardSize) gameBoard[i - 1, j + 1].incNumberNearMe();
-                        if (i < gameBoardSize && j > 0) gameBoard[i + 1, j - 1].incNumberNearMe();
+                        if (i < gameBoardSize-1) gameBoard[i + 1, j].incNumberNearMe();
+                        if (j < gameBoardSize-1) gameBoard[i, j + 1].incNumberNearMe();
+                        if (i > 0 && j < gameBoardSize-1) gameBoard[i - 1, j + 1].incNumberNearMe();
+                        if (i < gameBoardSize-1 && j > 0) gameBoard[i + 1, j - 1].incNumberNearMe();
                         if (i > 0 && j > 0) gameBoard[i - 1, j - 1].incNumberNearMe();
-                        if (j < gameBoardSize && i < gameBoardSize) gameBoard[i + 1, j + 1].incNumberNearMe();
+                        if (j < gameBoardSize-1 && i < gameBoardSize-1) gameBoard[i + 1, j + 1].incNumberNearMe();
                     }
                 }
             }
         }
+
         private void showAllBombs()
         {
             for (int i = 0; i < gameBoardSize; i++)
@@ -233,6 +256,7 @@ namespace Game1
                 }
             }
         }
+
         private void freeLand(int x, int y)
         {
             if (gameBoard[x, y].getNumberNearMe() != 0)
